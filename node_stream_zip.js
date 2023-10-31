@@ -143,7 +143,7 @@ const StreamZip = function (config) {
         entries = config.storeEntries !== false ? {} : null,
         fileName = config.file,
         textDecoder = config.nameEncoding ? new TextDecoder(config.nameEncoding) : null;
-
+        zstdDecompress = config.zstdDecompress;
     open();
 
     function open() {
@@ -386,7 +386,7 @@ const StreamZip = function (config) {
         return entries;
     };
 
-    this.stream = function (entry, zstdDecompress, callback) {
+    this.stream = function (entry, callback) {
         return this.openEntry(
             entry,
             (err, entry) => {
@@ -493,8 +493,8 @@ const StreamZip = function (config) {
         return (entry.flags & 0x8) !== 0x8;
     }
 
-    function extract(entry, outPath, zstdDecompress, callback) {
-        that.stream(entry, zstdDecompress, (err, stm) => {
+    function extract(entry, outPath, callback) {
+        that.stream(entry, (err, stm) => {
             if (err) {
                 callback(err);
             } else {
@@ -735,10 +735,10 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
         });
     }
 
-    async extract(entry, outPath, zstdDecompress) {
+    async extract(entry, outPath) {
         const zip = await this[propZip];
         return new Promise((resolve, reject) => {
-            zip.extract(entry, outPath, zstdDecompress, (err, res) => {
+            zip.extract(entry, outPath, (err, res) => {
                 if (err) {
                     reject(err);
                 } else {

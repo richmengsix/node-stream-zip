@@ -39,6 +39,11 @@ declare namespace StreamZip {
          * @default UTF8
          */
         nameEncoding?: string;
+
+        /**
+         * Support zstd decompress function
+         */
+        zstdDecompress?: Function;
     }
 
     interface ZipEntry {
