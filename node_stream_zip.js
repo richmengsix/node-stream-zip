@@ -95,6 +95,7 @@ const consts = {
     // 15-17 reserved
     IBM_TERSE: 18, // compressed using IBM TERSE
     IBM_LZ77: 19, //IBM LZ77 z
+    ZSTD: 93, // ZSTD
 
     /* General purpose bit flag */
     FLG_ENC: 0, // encrypted file
@@ -385,7 +386,7 @@ const StreamZip = function (config) {
         return entries;
     };
 
-    this.stream = function (entry, callback) {
+    this.stream = function (entry, zstdDecompress, callback) {
         return this.openEntry(
             entry,
             (err, entry) => {
@@ -398,6 +399,8 @@ const StreamZip = function (config) {
                     // nothing to do
                 } else if (entry.method === consts.DEFLATED) {
                     entryStream = entryStream.pipe(zlib.createInflateRaw());
+                } else if (entry.method === consts.ZSTD) {
+                    entryStream = entryStream.pipe(zstdDecompress());
                 } else {
                     return callback(new Error('Unknown compression method: ' + entry.method));
                 }
@@ -490,8 +493,8 @@ const StreamZip = function (config) {
         return (entry.flags & 0x8) !== 0x8;
     }
 
-    function extract(entry, outPath, callback) {
-        that.stream(entry, (err, stm) => {
+    function extract(entry, outPath, zstdDecompress, callback) {
+        that.stream(entry, zstdDecompress, (err, stm) => {
             if (err) {
                 callback(err);
             } else {
@@ -732,10 +735,10 @@ StreamZip.async = class StreamZipAsync extends events.EventEmitter {
         });
     }
 
-    async extract(entry, outPath) {
+    async extract(entry, outPath, zstdDecompress) {
         const zip = await this[propZip];
         return new Promise((resolve, reject) => {
-            zip.extract(entry, outPath, (err, res) => {
+            zip.extract(entry, outPath, zstdDecompress, (err, res) => {
                 if (err) {
                     reject(err);
                 } else {
